@@ -2,14 +2,21 @@ import { uploadPhoto } from "./utils";
 import { signUpUser } from "./4-user-promise";
 
 export default function handleProfileSignup(firstName, lastName, fileName) {
-  return Promise.allSettled([
-    uploadPhoto(fileName),
-    signUpUser(firstName, lastName),
-  ]).then((values) => {
+  const signup = signUpUser(firstName, lastName);
+  const upload = uploadPhoto(fileName);
+
+  return Promise.allSettled([signup, upload]).then((values) => {
     const results = [];
-    for (const item of values) {
-      results.push({ status: item.status, value: item.value || item.reason });
-    }
+    values.forEach((value) => {
+      if (value.status === "fulfilled") {
+        results.push({ status: value.status, value: value.value });
+      } else {
+        results.push({
+          status: value.status,
+          value: `Error: ${value.reason.message}`,
+        });
+      }
+    });
     return results;
   });
 }
